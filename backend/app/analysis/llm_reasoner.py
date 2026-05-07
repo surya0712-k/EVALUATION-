@@ -158,7 +158,9 @@ def _llm_analyze(
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not set")
 
-    model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash").strip() or "gemini-2.0-flash"
+    # Use a stable model id from https://ai.google.dev/gemini-api/docs/models/gemini
+    # (e.g. gemini-2.5-flash, gemini-3-flash-preview). Names like gemini-3.5-flash are invalid.
+    model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip() or "gemini-2.5-flash"
     genai.configure(api_key=api_key)
 
     heuristic = _heuristic_analysis(features, target_role, is_intern)

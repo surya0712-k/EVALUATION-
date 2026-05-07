@@ -26,7 +26,7 @@ def status():
         "ok": True,
         "service": "careerlens",
         "llm_enabled": bool(os.getenv("GEMINI_API_KEY", "").strip()),
-        "gemini_model": os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+        "gemini_model": os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
     }
 
 
