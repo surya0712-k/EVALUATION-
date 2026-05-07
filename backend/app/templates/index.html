@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CareerLens - Profile Evaluation Agent</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #141b34;
+      --panel-2: #1b2445;
+      --text: #e9ecf5;
+      --muted: #a8b0c9;
+      --accent: #7c9dff;
+      --accent-2: #5be1c4;
+      --danger: #ff8c9f;
+      --warning: #ffd479;
+      --border: #2b3664;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      background: radial-gradient(circle at top right, #1a2450 0%, var(--bg) 45%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .hero {
+      margin-bottom: 18px;
+    }
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 1.85rem;
+    }
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .card {
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+    .form-card {
+      padding: 16px;
+      position: sticky;
+      top: 14px;
+    }
+    .form-card h2,
+    .results h2 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 1.1rem;
+    }
+    label {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin: 10px 0 6px;
+    }
+    input[type="text"], input[type="url"] {
+      width: 100%;
+      padding: 10px 11px;
+      border-radius: 10px;
+      border: 1px solid #354377;
+      background: #0f1631;
+      color: var(--text);
+      outline: none;
+    }
+    input[type="text"]:focus, input[type="url"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(124, 157, 255, 0.15);
+    }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 12px 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      color: #0b1020;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      cursor: pointer;
+      font-weight: 700;
+    }
+    button:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+    .results {
+      padding: 16px;
+    }
+    .placeholder {
+      color: var(--muted);
+      border: 1px dashed #42508a;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .top-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(160px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .stat {
+      background: rgba(9, 14, 30, 0.45);
+      border: 1px solid #33406f;
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .stat .label {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-bottom: 5px;
+    }
+    .stat .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+    .section {
+      margin-top: 12px;
+      border-top: 1px solid #32406f;
+      padding-top: 12px;
+    }
+    .section h3 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+    }
+    .progress-row {
+      margin-bottom: 8px;
+    }
+    .progress-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.86rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .bar {
+      height: 9px;
+      background: #091129;
+      border: 1px solid #344172;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      width: 0;
+      transition: width 0.25s ease;
+    }
+    ul {
+      margin: 0;
+      padding-left: 18px;
+      color: #d7dcf0;
+      line-height: 1.5;
+    }
+    .pill-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #3b4a84;
+      background: #111a3a;
+      font-size: 0.82rem;
+      color: #dbe2f7;
+    }
+    .warn {
+      margin-top: 10px;
+      background: rgba(255, 212, 121, 0.08);
+      border: 1px solid rgba(255, 212, 121, 0.5);
+      color: #ffe6ac;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.86rem;
+    }
+    .error {
+      margin-top: 10px;
+      background: rgba(255, 140, 159, 0.08);
+      border: 1px solid rgba(255, 140, 159, 0.5);
+      color: #ffc2ce;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.86rem;
+    }
+    @media (max-width: 920px) {
+      .layout { grid-template-columns: 1fr; }
+      .form-card { position: static; }
+      .top-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="hero">
+      <h1>CareerLens - Profile Evaluation Agent</h1>
+      <p>Analyze GitHub and LinkedIn profiles with weighted scoring, strengths, weaknesses, role fit, and hiring recommendations.</p>
+    </header>
+
+    <section class="layout">
+      <aside class="card form-card">
+        <h2>Candidate Input</h2>
+        <form id="eval-form">
+          <label for="github_url">GitHub URL</label>
+          <input id="github_url" type="url" required placeholder="https://github.com/username">
+
+          <label for="linkedin_url">LinkedIn URL</label>
+          <input id="linkedin_url" type="url" required placeholder="https://www.linkedin.com/in/username">
+
+          <label for="target_role">Target Role</label>
+          <input id="target_role" type="text" value="Software Engineer">
+
+          <label class="checkbox-row" for="is_intern">
+            <input id="is_intern" type="checkbox">
+            Evaluate as intern candidate
+          </label>
+
+          <button id="submit-btn" type="submit">Evaluate Candidate</button>
+        </form>
+        <div id="form-error"></div>
+      </aside>
+
+      <article class="card results">
+        <h2>Evaluation Report</h2>
+        <div id="report" class="placeholder">Submit profile links to generate a structured report.</div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("eval-form");
+    const submitBtn = document.getElementById("submit-btn");
+    const report = document.getElementById("report");
+    const formError = document.getElementById("form-error");
+
+    const titleCase = (text) => (text || "")
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+    const listHTML = (items) => {
+      if (!items || items.length === 0) return "<p class='placeholder'>No items.</p>";
+      return `<ul>${items.map((item) => `<li>${item}</li>`).join("")}</ul>`;
+    };
+
+    const buildBreakdown = (breakdown) => {
+      if (!breakdown) return "<p class='placeholder'>No breakdown available.</p>";
+      return Object.entries(breakdown).map(([key, value]) => {
+        const score = Number(value.score || 0);
+        return `
+          <div class="progress-row">
+            <div class="progress-head">
+              <span>${titleCase(key)} (${Math.round((value.weight || 0) * 100)}%)</span>
+              <span>${score.toFixed(1)} / 100</span>
+            </div>
+            <div class="bar"><div class="fill" style="width:${Math.max(0, Math.min(100, score))}%"></div></div>
+          </div>
+        `;
+      }).join("");
+    };
+
+    const buildInternSection = (internCriteria) => {
+      const entries = Object.entries(internCriteria || {});
+      if (entries.length === 0) return "";
+      return `
+        <div class="section">
+          <h3>Intern Evaluation Criteria</h3>
+          ${entries.map(([key, value]) => `
+            <div class="progress-row">
+              <div class="progress-head">
+                <span>${titleCase(key)}</span>
+                <span>${Number(value).toFixed(1)} / 100</span>
+              </div>
+              <div class="bar"><div class="fill" style="width:${Math.max(0, Math.min(100, Number(value)))}%"></div></div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    };
+
+    const renderReport = (data) => {
+      const finalScore = Number(data.final_score || 0);
+      const completeness = Number(data.data_completeness || 0);
+      const signals = data.generated_signals || {};
+      const warnings = data.warnings || [];
+
+      report.className = "";
+      report.innerHTML = `
+        <section class="top-grid">
+          <div class="stat">
+            <div class="label">Final Score</div>
+            <div class="value">${finalScore.toFixed(1)} / 100</div>
+          </div>
+          <div class="stat">
+            <div class="label">Data Completeness</div>
+            <div class="value">${(completeness * 100).toFixed(0)}%</div>
+          </div>
+          <div class="stat">
+            <div class="label">Tech Depth Signal</div>
+            <div class="value">${Number(signals.tech_depth_score || 0).toFixed(1)}</div>
+          </div>
+        </section>
+
+        <div class="section">
+          <h3>Weighted Category Breakdown</h3>
+          ${buildBreakdown(data.category_breakdown)}
+        </div>
+
+        <div class="section">
+          <h3>Strengths</h3>
+          ${listHTML(data.strengths)}
+        </div>
+
+        <div class="section">
+          <h3>Weaknesses</h3>
+          ${listHTML(data.weaknesses)}
+        </div>
+
+        <div class="section">
+          <h3>Hiring Recommendations</h3>
+          ${listHTML(data.hiring_recommendations)}
+        </div>
+
+        <div class="section">
+          <h3>Suggested Role Fit</h3>
+          <div class="pill-wrap">
+            ${(data.suggested_role_fit || []).map((role) => `<span class="pill">${role}</span>`).join("") || "<span class='pill'>No role suggestion</span>"}
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Generated Signals</h3>
+          <div class="pill-wrap">
+            <span class="pill">Consistency: ${Number(signals.consistency_score || 0).toFixed(1)}</span>
+            <span class="pill">Open Source Contribution: ${Number(signals.open_source_contribution_signal || 0).toFixed(1)}</span>
+            <span class="pill">Career Progression: ${Number(signals.career_progression_score || 0).toFixed(1)}</span>
+            <span class="pill">Skill Relevance: ${Number(signals.skill_relevance_score || 0).toFixed(1)}</span>
+          </div>
+        </div>
+
+        ${buildInternSection(data.intern_criteria)}
+
+        ${warnings.length ? `<div class="warn"><strong>Warnings:</strong><br>${warnings.join("<br>")}</div>` : ""}
+      `;
+    };
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      formError.innerHTML = "";
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Evaluating...";
+      report.className = "placeholder";
+      report.textContent = "Running data fetch, processing, LLM analysis, and scoring...";
+
+      const payload = {
+        github_url: document.getElementById("github_url").value.trim(),
+        linkedin_url: document.getElementById("linkedin_url").value.trim(),
+        target_role: document.getElementById("target_role").value.trim() || "Software Engineer",
+        is_intern: document.getElementById("is_intern").checked
+      };
+
+      try {
+        const response = await fetch("/api/evaluate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.detail || "Request failed.");
+        }
+        renderReport(data);
+      } catch (error) {
+        report.className = "placeholder";
+        report.textContent = "Could not generate report.";
+        formError.innerHTML = `<div class="error">${error.message || "Unexpected error occurred."}</div>`;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Evaluate Candidate";
+      }
+    });
+  </script>
+</body>
+</html>
