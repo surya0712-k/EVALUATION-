@@ -50,12 +50,17 @@ def processing_node(state: EvaluationState) -> EvaluationState:
 
 
 def llm_analysis_node(state: EvaluationState) -> EvaluationState:
+    warn_extra: list[str] = []
     llm_analysis = analyze_candidate(
         features=state["processed_features"],
         target_role=state.get("target_role", "Software Engineer"),
         is_intern=state.get("is_intern", False),
+        github_data=state.get("github_data", {}),
+        linkedin_data=state.get("linkedin_data", {}),
+        warn_sink=warn_extra,
     )
-    return {**state, "llm_analysis": llm_analysis}
+    warnings = [*state.get("warnings", []), *warn_extra]
+    return {**state, "llm_analysis": llm_analysis, "warnings": warnings}
 
 
 def scoring_node(state: EvaluationState) -> EvaluationState:
