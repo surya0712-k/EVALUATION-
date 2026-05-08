@@ -22,21 +22,77 @@ def fetch_data_node(state: EvaluationState) -> EvaluationState:
 
     github_data: Dict[str, Any] = {}
     linkedin_data: Dict[str, Any] = {}
+    linkedin_debug: Dict[str, Any] = {}
 
     try:
         github_data = github_collector.collect(state["github_url"])
     except Exception as exc:  # noqa: BLE001
         warnings.append(f"GitHub fetch issue: {exc}")
 
+    if github_data and int(github_data.get("repo_count") or 0) > 0:
+        if int(github_data.get("commit_activity_90d") or 0) == 0:
+            warnings.append(
+                "No public GitHub pushes detected in the last 90 days for this username. "
+                "Work on private repos, unpushed commits, or commits under another account "
+                "will not appear in this score."
+            )
+
     try:
-        linkedin_data = linkedin_collector.collect(state["linkedin_url"])
+        linkedin_data, linkedin_debug = linkedin_collector.collect_with_debug(state["linkedin_url"])
     except Exception as exc:  # noqa: BLE001
         warnings.append(f"LinkedIn fetch issue: {exc}")
+        linkedin_debug = {"attempts": [{"provider": "collector", "status": "error", "reason": str(exc)}]}
+
+    exp_override = state.get("linkedin_experience_years")
+    if exp_override is not None:
+        try:
+            linkedin_data["experience_years"] = float(exp_override)
+        except (TypeError, ValueError):
+            pass
+    ach_override = state.get("linkedin_achievements")
+    if isinstance(ach_override, list) and ach_override:
+        linkedin_data["achievements"] = [str(x).strip() for x in ach_override if str(x).strip()]
+    skills_override = state.get("linkedin_skills")
+    if isinstance(skills_override, list) and skills_override:
+        linkedin_data["skills"] = [str(x).strip() for x in skills_override if str(x).strip()]
+
+    if (
+        exp_override is not None
+        or (isinstance(ach_override, list) and ach_override)
+        or (isinstance(skills_override, list) and skills_override)
+    ):
+        linkedin_data["data_source"] = "user_supplied"
+        linkedin_data["data_completeness"] = max(
+            float(linkedin_data.get("data_completeness", 0.2)),
+            0.72,
+        )
+        linkedin_data["career_progression_score"] = max(
+            float(linkedin_data.get("career_progression_score", 40)),
+            52.0,
+        )
+        linkedin_data["skill_relevance_score"] = max(
+            float(linkedin_data.get("skill_relevance_score", 40)),
+            52.0,
+        )
+
+    if linkedin_data.get("data_source") == "placeholder":
+        linkedin_url = str(state.get("linkedin_url", "")).strip()
+        if linkedin_url.endswith("/in") or linkedin_url.endswith("/in/"):
+            warnings.append(
+                "LinkedIn URL looks incomplete (it ends at /in/). Use a full profile URL like "
+                "https://www.linkedin.com/in/<username>/."
+            )
+        warnings.append(
+            "LinkedIn was not enriched: configure Apify (APIFY_API_TOKEN) for automated scraping, "
+            "or use backend/linkedin_profile.json / LINKEDIN_PROFILE_JSON. "
+            "Until then, scores use GitHub-heavy weighting."
+        )
 
     return {
         **state,
         "github_data": github_data,
         "linkedin_data": linkedin_data,
+        "linkedin_debug": linkedin_debug,
         "warnings": warnings,
     }
 
@@ -64,7 +120,11 @@ def llm_analysis_node(state: EvaluationState) -> EvaluationState:
 
 
 def scoring_node(state: EvaluationState) -> EvaluationState:
-    scoring = compute_weighted_score(state["processed_features"]["category_scores"])
+    linkedin_placeholder = state.get("linkedin_data", {}).get("data_source") == "placeholder"
+    scoring = compute_weighted_score(
+        state["processed_features"]["category_scores"],
+        linkedin_placeholder=linkedin_placeholder,
+    )
     return {**state, "scoring": scoring}
 
 
@@ -91,7 +151,17 @@ def output_node(state: EvaluationState) -> EvaluationState:
         },
         "intern_criteria": state["llm_analysis"].get("intern_criteria", {}),
         "data_completeness": state["processed_features"]["data_completeness"],
+        "scoring_mode": state["scoring"].get("scoring_mode", "full_profile"),
+        "github_signals": {
+            "commit_activity_index_90d": state.get("github_data", {}).get("commit_activity_90d"),
+            "repos_pushed_90d": state.get("github_data", {}).get("repos_pushed_90d"),
+            "public_push_commits_estimated_90d": state.get("github_data", {}).get("push_commits_90d"),
+            "commits_repo_scan_90d": state.get("github_data", {}).get("commits_repo_scan_90d"),
+            "public_repo_count": state.get("github_data", {}).get("repo_count"),
+        },
         "warnings": state.get("warnings", []),
+        "linkedin_data_source": state.get("linkedin_data", {}).get("data_source", "unknown"),
+        "linkedin_debug": state.get("linkedin_debug", {}),
     }
     return {**state, "output": output}
 

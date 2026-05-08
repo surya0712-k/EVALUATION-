@@ -18,7 +18,18 @@ def build_features(github_data: Dict[str, Any], linkedin_data: Dict[str, Any]) -
     consistency_score = _cap_100(commit_activity_90d * 1.5)
     open_source_contribution_signal = _cap_100((total_forks * 1.1) + (total_stars * 0.4))
 
-    github_activity = _cap_100((commit_activity_90d * 1.5) + (repo_count * 0.6))
+    # Public "events" in 90d often read as 0 even for strong profiles (pagination, event types).
+    # Blend repo + star/fork signal so github_activity is not stuck near repo_count*0.6 alone.
+    events_activity = (commit_activity_90d * 1.5) + (repo_count * 0.6)
+    readme_signal = float(github_data.get("readme_signal", 0) or 0)
+    stars_repo_signal = min(
+        82.0,
+        repo_count * 1.85
+        + min(float(total_stars), 3500.0) * 0.017
+        + min(float(total_forks), 1200.0) * 0.028
+        + min(10.0, readme_signal * 0.12),
+    )
+    github_activity = _cap_100(max(events_activity, stars_repo_signal))
     project_quality = _cap_100((total_stars * 0.8) + (total_forks * 0.6) + (tech_depth_score * 0.2))
     skills = _cap_100((len(languages) * 8) + linkedin_data.get("skill_relevance_score", 40) * 0.4)
     experience = _cap_100((linkedin_data.get("experience_years", 0) * 8) + linkedin_data.get("career_progression_score", 40) * 0.3)

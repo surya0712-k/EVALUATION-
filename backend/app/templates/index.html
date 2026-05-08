@@ -672,7 +672,7 @@
         <span class="hero-line2">GitHub &amp; LinkedIn in one pass</span>
       </h1>
       <p class="hero-sub">
-        Paste two profile links, set the role you are hiring for, and get a weighted report your team can trust at first glance.
+        Paste two profile links and your target role. GitHub is read from the public API; LinkedIn is enriched automatically via Apify (with fallbacks) and JSON backup.
       </p>
     </section>
 
@@ -714,8 +714,8 @@
       <div class="tips-inner">
         <h3 id="tips-title">URL tips</h3>
         <ul>
-          <li>GitHub: use the profile or organization root (e.g. <code>https://github.com/octocat</code>).</li>
-          <li>LinkedIn: use a personal profile URL that contains <code>/in/</code>, not company pages.</li>
+          <li>GitHub: profile or org root (e.g. <code>https://github.com/octocat</code>). Set <code>GITHUB_TOKEN</code> in <code>.env</code> for commit scanning rate limits.</li>
+          <li>LinkedIn: personal URL with <code>/in/</code>. For automation set <code>APIFY_API_TOKEN</code> in <code>.env</code>. Fallback: <code>backend/linkedin_profile.json</code> or <code>LINKEDIN_PROFILE_JSON</code>.</li>
         </ul>
         <button type="button" class="tips-close" id="close-tips">Done</button>
       </div>
@@ -802,6 +802,31 @@
       `;
     };
 
+    const buildLinkedInDebug = (data) => {
+      const debug = data.linkedin_debug || {};
+      const attempts = Array.isArray(debug.attempts) ? debug.attempts : [];
+      const source = data.linkedin_data_source || "unknown";
+      if (!attempts.length && !source) return "";
+
+      const rows = attempts.map((a) => {
+        const provider = a.provider || "unknown";
+        const status = a.status || "unknown";
+        const reason = a.reason ? ` - ${a.reason}` : "";
+        const path = a.path ? ` (${a.path})` : "";
+        return `<li><code>${provider}</code>: <strong>${status}</strong>${reason}${path}</li>`;
+      }).join("");
+
+      return `
+        <div class="section">
+          <h3>LinkedIn provider debug</h3>
+          <div class="pill-wrap">
+            <span class="pill">Data source: ${source}</span>
+          </div>
+          ${rows ? `<ul>${rows}</ul>` : "<p class='mini-placeholder'>No provider attempts recorded.</p>"}
+        </div>
+      `;
+    };
+
     const setReportIdle = (message) => {
       ensureReportShell();
       report.className = "report-box is-placeholder";
@@ -882,7 +907,22 @@
           </div>
         </div>
 
+        ${data.github_signals ? `
+        <div class="section">
+          <h3>GitHub activity (public API only)</h3>
+          <div class="pill-wrap">
+            <span class="pill">Activity index (90d): ${data.github_signals.commit_activity_index_90d ?? "—"}</span>
+            <span class="pill">Repos pushed (90d): ${data.github_signals.repos_pushed_90d ?? "—"}</span>
+            <span class="pill">Push commits est. (90d): ${data.github_signals.public_push_commits_estimated_90d ?? "—"}</span>
+            <span class="pill">Repo scan commits (90d): ${data.github_signals.commits_repo_scan_90d ?? "—"}</span>
+            <span class="pill">Public repos listed: ${data.github_signals.public_repo_count ?? "—"}</span>
+          </div>
+        </div>
+        ` : ""}
+
         ${buildInternSection(data.intern_criteria)}
+
+        ${buildLinkedInDebug(data)}
 
         ${warnings.length ? `<div class="warn"><strong>Warnings:</strong><br>${warnings.join("<br>")}</div>` : ""}
       `;

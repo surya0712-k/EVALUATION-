@@ -78,6 +78,9 @@ def _compact_github(github_data: Dict[str, Any]) -> Dict[str, Any]:
         "total_stars": github_data.get("total_stars"),
         "total_forks": github_data.get("total_forks"),
         "commit_activity_90d": github_data.get("commit_activity_90d"),
+        "repos_pushed_90d": github_data.get("repos_pushed_90d"),
+        "push_commits_90d": github_data.get("push_commits_90d"),
+        "commits_repo_scan_90d": github_data.get("commits_repo_scan_90d"),
         "profile": github_data.get("profile", {}),
     }
 
@@ -91,6 +94,8 @@ def _compact_linkedin(linkedin_data: Dict[str, Any]) -> Dict[str, Any]:
         "achievements": (linkedin_data.get("achievements") or [])[:8],
         "data_completeness": linkedin_data.get("data_completeness"),
         "data_source": linkedin_data.get("data_source"),
+        "career_progression_score": linkedin_data.get("career_progression_score"),
+        "skill_relevance_score": linkedin_data.get("skill_relevance_score"),
     }
 
 

@@ -1,5 +1,6 @@
 .env
 backend/.env
+backend/linkedin_profile.json
 __pycache__/
 *.py[cod]
 .Python

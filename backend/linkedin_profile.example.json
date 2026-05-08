@@ -1,0 +1,13 @@
+{
+  "experience_years": 2,
+  "skills": ["Python", "Kotlin", "System design"],
+  "achievements": [
+    "Software Engineer — Acme Corp",
+    "Engineering intern — Previous Inc"
+  ],
+  "education": [],
+  "certifications": [],
+  "career_progression_score": 62,
+  "skill_relevance_score": 58,
+  "data_completeness": 0.8
+}

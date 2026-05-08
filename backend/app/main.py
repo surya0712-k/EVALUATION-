@@ -8,11 +8,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from app.routes.evaluate import router as evaluate_router
-
 _backend_root = Path(__file__).resolve().parent.parent
 load_dotenv(_backend_root / ".env")
 load_dotenv()
+
+from app.routes.evaluate import router as evaluate_router
 
 app = FastAPI(title="Profile Evaluation Agent")
 app.include_router(evaluate_router, prefix="/api", tags=["evaluation"])
@@ -27,6 +27,16 @@ def status():
         "service": "careerlens",
         "llm_enabled": bool(os.getenv("GEMINI_API_KEY", "").strip()),
         "gemini_model": os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+        "linkedin_automation": {
+            "apify_configured": bool(os.getenv("APIFY_API_TOKEN", "").strip()),
+            "apify_actor": os.getenv(
+                "APIFY_LINKEDIN_ACTOR_ID", "harvestapi/linkedin-profile-scraper"
+            ),
+            "phantombuster_configured": bool(
+                os.getenv("PHANTOMBUSTER_API_KEY", "").strip()
+                and os.getenv("PHANTOMBUSTER_AGENT_ID", "").strip()
+            ),
+        },
     }
 
 

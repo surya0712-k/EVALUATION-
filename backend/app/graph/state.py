@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, TypedDict
+from typing import Any, Dict, List, NotRequired, TypedDict
 
 
 class EvaluationState(TypedDict, total=False):
@@ -6,8 +6,12 @@ class EvaluationState(TypedDict, total=False):
     linkedin_url: str
     target_role: str
     is_intern: bool
+    linkedin_experience_years: NotRequired[float | None]
+    linkedin_achievements: NotRequired[list[str] | None]
+    linkedin_skills: NotRequired[list[str] | None]
     github_data: Dict[str, Any]
     linkedin_data: Dict[str, Any]
+    linkedin_debug: Dict[str, Any]
     processed_features: Dict[str, Any]
     llm_analysis: Dict[str, Any]
     scoring: Dict[str, Any]
