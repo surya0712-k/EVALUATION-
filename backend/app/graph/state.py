@@ -11,7 +11,6 @@ class EvaluationState(TypedDict, total=False):
     linkedin_skills: NotRequired[list[str] | None]
     github_data: Dict[str, Any]
     linkedin_data: Dict[str, Any]
-    linkedin_debug: Dict[str, Any]
     processed_features: Dict[str, Any]
     llm_analysis: Dict[str, Any]
     scoring: Dict[str, Any]

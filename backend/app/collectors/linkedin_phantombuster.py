@@ -7,10 +7,8 @@ from typing import Any, Dict
 
 from app.collectors.linkedin_providers import (
     fetch_apify_linkedin_profile,
-    fetch_phantombuster_profile,
     fetch_public_linkedin_profile,
     map_apify_to_collector_shape,
-    map_phantombuster_to_collector_shape,
     map_public_profile_to_collector_shape,
 )
 
@@ -23,12 +21,11 @@ class LinkedInCollector:
     LinkedIn data sources (first match wins):
 
     1. **Apify LinkedIn Profile Search Scraper** — set ``APIFY_API_TOKEN``.
-    2. **PhantomBuster API** — optional fallback via ``PHANTOMBUSTER_API_KEY`` / ``PHANTOMBUSTER_AGENT_ID``.
-    3. **Public scraper** — best-effort pull from the public LinkedIn URL.
-    4. **Local JSON** — ``LINKEDIN_PROFILE_JSON`` path to a file (dev / manual).
-    5. **Default file** — ``backend/linkedin_profile.json`` if present (gitignored; copy from
+    2. **Public scraper** — best-effort pull from the public LinkedIn URL.
+    3. **Local JSON** — ``LINKEDIN_PROFILE_JSON`` path to a file (dev / manual).
+    4. **Default file** — ``backend/linkedin_profile.json`` if present (gitignored; copy from
        ``linkedin_profile.example.json``).
-    6. **Placeholder** — sparse defaults so the pipeline still runs (scores are not verified).
+    5. **Placeholder** — sparse defaults so the pipeline still runs (scores are not verified).
 
     The filename ``linkedin_phantombuster`` is legacy: PhantomBuster was never wired here
     because each Phantom uses its own launch arguments and async buckets. If you add a
@@ -94,18 +91,6 @@ class LinkedInCollector:
                 "provider": "apify",
                 "status": "failed",
                 "reason": apify_reason or "no items, token/actor issue, timeout, or parse mismatch",
-            }
-        )
-
-        phantom = fetch_phantombuster_profile(linkedin_url)
-        if phantom:
-            debug["attempts"].append({"provider": "phantombuster", "status": "success"})
-            return map_phantombuster_to_collector_shape(phantom, linkedin_url), debug
-        debug["attempts"].append(
-            {
-                "provider": "phantombuster",
-                "status": "failed",
-                "reason": "not configured, launch/poll failed, or no output rows",
             }
         )
 

@@ -22,7 +22,6 @@ def fetch_data_node(state: EvaluationState) -> EvaluationState:
 
     github_data: Dict[str, Any] = {}
     linkedin_data: Dict[str, Any] = {}
-    linkedin_debug: Dict[str, Any] = {}
 
     try:
         github_data = github_collector.collect(state["github_url"])
@@ -38,10 +37,9 @@ def fetch_data_node(state: EvaluationState) -> EvaluationState:
             )
 
     try:
-        linkedin_data, linkedin_debug = linkedin_collector.collect_with_debug(state["linkedin_url"])
+        linkedin_data = linkedin_collector.collect(state["linkedin_url"])
     except Exception as exc:  # noqa: BLE001
         warnings.append(f"LinkedIn fetch issue: {exc}")
-        linkedin_debug = {"attempts": [{"provider": "collector", "status": "error", "reason": str(exc)}]}
 
     exp_override = state.get("linkedin_experience_years")
     if exp_override is not None:
@@ -92,7 +90,6 @@ def fetch_data_node(state: EvaluationState) -> EvaluationState:
         **state,
         "github_data": github_data,
         "linkedin_data": linkedin_data,
-        "linkedin_debug": linkedin_debug,
         "warnings": warnings,
     }
 
@@ -160,8 +157,6 @@ def output_node(state: EvaluationState) -> EvaluationState:
             "public_repo_count": state.get("github_data", {}).get("repo_count"),
         },
         "warnings": state.get("warnings", []),
-        "linkedin_data_source": state.get("linkedin_data", {}).get("data_source", "unknown"),
-        "linkedin_debug": state.get("linkedin_debug", {}),
     }
     return {**state, "output": output}
 

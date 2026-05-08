@@ -14,7 +14,12 @@ load_dotenv()
 
 from app.routes.evaluate import router as evaluate_router
 
-app = FastAPI(title="Profile Evaluation Agent")
+app = FastAPI(
+    title="Profile Evaluation Agent",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 app.include_router(evaluate_router, prefix="/api", tags=["evaluation"])
 
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
@@ -43,3 +48,12 @@ def status():
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse(request, "index.html", {})
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    host = os.getenv("HOST", "0.0.0.0").strip() or "0.0.0.0"
+    port = int(os.getenv("PORT", "8000"))
+    reload_enabled = os.getenv("RELOAD", "false").strip().lower() in {"1", "true", "yes"}
+    uvicorn.run("app.main:app", host=host, port=port, reload=reload_enabled)

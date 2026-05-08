@@ -802,31 +802,6 @@
       `;
     };
 
-    const buildLinkedInDebug = (data) => {
-      const debug = data.linkedin_debug || {};
-      const attempts = Array.isArray(debug.attempts) ? debug.attempts : [];
-      const source = data.linkedin_data_source || "unknown";
-      if (!attempts.length && !source) return "";
-
-      const rows = attempts.map((a) => {
-        const provider = a.provider || "unknown";
-        const status = a.status || "unknown";
-        const reason = a.reason ? ` - ${a.reason}` : "";
-        const path = a.path ? ` (${a.path})` : "";
-        return `<li><code>${provider}</code>: <strong>${status}</strong>${reason}${path}</li>`;
-      }).join("");
-
-      return `
-        <div class="section">
-          <h3>LinkedIn provider debug</h3>
-          <div class="pill-wrap">
-            <span class="pill">Data source: ${source}</span>
-          </div>
-          ${rows ? `<ul>${rows}</ul>` : "<p class='mini-placeholder'>No provider attempts recorded.</p>"}
-        </div>
-      `;
-    };
-
     const setReportIdle = (message) => {
       ensureReportShell();
       report.className = "report-box is-placeholder";
@@ -921,8 +896,6 @@
         ` : ""}
 
         ${buildInternSection(data.intern_criteria)}
-
-        ${buildLinkedInDebug(data)}
 
         ${warnings.length ? `<div class="warn"><strong>Warnings:</strong><br>${warnings.join("<br>")}</div>` : ""}
       `;
