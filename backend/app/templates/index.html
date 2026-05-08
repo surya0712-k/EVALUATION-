@@ -919,10 +919,26 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
+        const contentType = response.headers.get("content-type") || "";
+        const raw = await response.text();
+        let data = null;
+        if (contentType.includes("application/json")) {
+          try {
+            data = JSON.parse(raw);
+          } catch {
+            data = null;
+          }
+        }
 
-        const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.detail || "Request failed.");
+          const detail = data?.detail || raw || `Request failed (${response.status}).`;
+          throw new Error(detail);
+        }
+
+        if (!data || typeof data !== "object") {
+          throw new Error(
+            `Backend returned non-JSON response (${response.status}). Check that /api/evaluate exists on this deployment.`
+          );
         }
         renderReport(data);
       } catch (error) {
