@@ -43,6 +43,27 @@ def _string_items(values: Any, limit: int = 40) -> List[str]:
     return out
 
 
+def linkedin_full_name_from_raw(raw: Dict[str, Any], _depth: int = 0) -> str:
+    """Best-effort display name from provider JSON (never uses headline)."""
+    if not isinstance(raw, dict) or _depth > 3:
+        return ""
+    for key in ("fullName", "full_name", "name", "displayName"):
+        val = raw.get(key)
+        if isinstance(val, str) and val.strip():
+            return val.strip()
+    fn = str(raw.get("firstName") or raw.get("first_name") or "").strip()
+    ln = str(raw.get("lastName") or raw.get("last_name") or "").strip()
+    if fn or ln:
+        return f"{fn} {ln}".strip()
+    for nest_key in ("user", "profile", "basicInfo", "data", "person"):
+        nested = raw.get(nest_key)
+        if isinstance(nested, dict):
+            inner = linkedin_full_name_from_raw(nested, _depth + 1)
+            if inner:
+                return inner
+    return ""
+
+
 def _experience_years_from_entries(entries: List[Dict[str, Any]]) -> float:
     months = 0
     for entry in entries:
@@ -88,17 +109,39 @@ def _scores_from_linkedin_sections(
     }
 
 
+def _unwrap_profile_record(record: Dict[str, Any]) -> Dict[str, Any]:
+    """HarvestAPI and other actors often nest the person under profile / linkedinProfile."""
+    if linkedin_full_name_from_raw(record):
+        return record
+    for key in (
+        "profile",
+        "linkedinProfile",
+        "linkedin_profile",
+        "person",
+        "element",
+        "data",
+        "item",
+        "user",
+    ):
+        nested = record.get(key)
+        if isinstance(nested, dict) and linkedin_full_name_from_raw(nested):
+            return nested
+    return record
+
+
 def _extract_first_profile(payload: Any) -> Optional[Dict[str, Any]]:
     if isinstance(payload, dict):
-        for key in ("data", "result", "items"):
+        for key in ("data", "result", "items", "datasetItems", "profiles"):
             value = payload.get(key)
             if isinstance(value, list) and value:
                 first = value[0]
                 if isinstance(first, dict):
-                    return first
-        return payload
-    if isinstance(payload, list) and payload and isinstance(payload[0], dict):
-        return payload[0]
+                    return _unwrap_profile_record(first)
+        return _unwrap_profile_record(payload)
+    if isinstance(payload, list) and payload:
+        for item in payload:
+            if isinstance(item, dict):
+                return _unwrap_profile_record(item)
     return None
 
 
@@ -116,29 +159,23 @@ def fetch_apify_linkedin_profile(linkedin_url: str) -> Tuple[Optional[Dict[str, 
     timeout_seconds = os.getenv("APIFY_TIMEOUT_SECONDS", "120")
     actor_attempts: List[tuple[str, Dict[str, Any], str]] = []
 
-    # 1) Preferred strategy for this app: scrape by explicit profile URL.
+    # 1) harvestapi/linkedin-profile-scraper — documented input is profileUrls (URL or public id).
     actor_attempts.append(
         (
             actor_id or _APIFY_DEFAULT_URL_ACTOR,
-            {
-                "profileUrls": [clean_url],
-                "linkedinUrls": [clean_url],
-                "maxItems": 1,
-            },
-            "url-mode-list",
+            {"profileUrls": [clean_url]},
+            "profileUrls",
         )
     )
-    actor_attempts.append(
-        (
-            actor_id or _APIFY_DEFAULT_URL_ACTOR,
-            {
-                "profileUrls": clean_url,
-                "linkedinUrls": clean_url,
-                "maxItems": 1,
-            },
-            "url-mode-string",
+    handle_only = handle if handle and handle.lower() not in {"in", "pub", "company", "school"} else ""
+    if handle_only:
+        actor_attempts.append(
+            (
+                actor_id or _APIFY_DEFAULT_URL_ACTOR,
+                {"profileUrls": [handle_only]},
+                "profileUrls-handle",
+            )
         )
-    )
     # 2) Search strategy fallback (some actors require searchQuery semantics).
     actor_attempts.append(
         (
@@ -204,6 +241,7 @@ def fetch_apify_linkedin_profile(linkedin_url: str) -> Tuple[Optional[Dict[str, 
 
 
 def map_apify_to_collector_shape(raw: Dict[str, Any], linkedin_url: str) -> Dict[str, Any]:
+    full_name = linkedin_full_name_from_raw(raw)
     experience_entries_raw = (
         raw.get("experiences")
         or raw.get("experience")
@@ -270,6 +308,7 @@ def map_apify_to_collector_shape(raw: Dict[str, Any], linkedin_url: str) -> Dict
 
     return {
         "linkedin_url": linkedin_url,
+        "full_name": full_name,
         "experience_years": round(experience_years, 2),
         "skills": skills,
         "education": education,
@@ -277,7 +316,7 @@ def map_apify_to_collector_shape(raw: Dict[str, Any], linkedin_url: str) -> Dict
         "achievements": achievements[:20],
         "career_progression_score": scores["career_progression_score"],
         "skill_relevance_score": scores["skill_relevance_score"],
-        "data_source": "apify_linkedin_search",
+        "data_source": "apify_linkedin",
         "data_completeness": round(min(0.92, completeness), 2),
         "raw_headline": str(raw.get("headline") or raw.get("jobTitle") or "").strip(),
         "raw_summary": str(raw.get("summary") or raw.get("about") or "")[:500],
@@ -413,6 +452,7 @@ def map_phantombuster_to_collector_shape(raw: Dict[str, Any], linkedin_url: str)
 
     return {
         "linkedin_url": linkedin_url,
+        "full_name": linkedin_full_name_from_raw(raw),
         "experience_years": round(experience_years, 2),
         "skills": skills,
         "education": education,
@@ -517,6 +557,7 @@ def map_public_profile_to_collector_shape(raw: Dict[str, Any], linkedin_url: str
         achievements = [str(a).strip() for a in achievements_raw if str(a).strip()][:20]
 
     headline = (raw.get("headline") or "").strip()
+    full_name = str(raw.get("name") or "").strip()
     if headline and headline not in achievements:
         achievements.insert(0, headline)
 
@@ -536,6 +577,7 @@ def map_public_profile_to_collector_shape(raw: Dict[str, Any], linkedin_url: str
 
     return {
         "linkedin_url": linkedin_url,
+        "full_name": full_name,
         "experience_years": 0.0,
         "skills": skills,
         "education": [],

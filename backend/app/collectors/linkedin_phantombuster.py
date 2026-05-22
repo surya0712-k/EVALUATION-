@@ -36,6 +36,7 @@ class LinkedInCollector:
     def _placeholder(linkedin_url: str) -> Dict[str, Any]:
         return {
             "linkedin_url": linkedin_url,
+            "full_name": "",
             "experience_years": 0,
             "skills": [],
             "education": [],
@@ -59,8 +60,10 @@ class LinkedInCollector:
             skills = []
         if not isinstance(achievements, list):
             achievements = []
+        fn = str(data.get("full_name") or data.get("name") or "").strip()
         return {
             "linkedin_url": linkedin_url,
+            "full_name": fn,
             "experience_years": float(data.get("experience_years", 0) or 0),
             "skills": [str(s).strip() for s in skills if str(s).strip()],
             "education": data.get("education") or [],

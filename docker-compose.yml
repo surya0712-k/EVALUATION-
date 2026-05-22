@@ -1,0 +1,39 @@
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      # Vite runs inside this container; 127.0.0.1:8000 is wrong — use the backend service name.
+      VITE_PROXY_TARGET: http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    # Loads APIFY_API_TOKEN, GITHUB_TOKEN, GEMINI_API_KEY, etc. (copy backend/.env.example → backend/.env)
+    env_file:
+      - ./backend/.env
+    environment:
+      # Keep Postgres URL for Docker network; other secrets come from env_file only (do not use ${VAR:-} here — it overrides env_file with empty values).
+      DATABASE_URL: postgresql://postgres:password@postgres-db:5432/careerlens
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/status')"]
+      interval: 5s
+      timeout: 5s
+      retries: 8
+      start_period: 15s
+    depends_on:
+      - postgres-db
+
+  postgres-db:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: careerlens
+    ports:
+      - "5432:5432"
