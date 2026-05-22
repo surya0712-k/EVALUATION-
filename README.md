@@ -272,11 +272,6 @@ This project helped me deeply understand:
 - API design
 - backend workflows
 - service communication
-
-# Screenshots
-ui.png
-image.png
-
 ---
 
 # License
