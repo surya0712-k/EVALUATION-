@@ -31,7 +31,7 @@ app.include_router(profile_router, prefix="/api", tags=["profile"])
 
 cors_origins_raw = os.getenv(
     "CORS_ORIGINS",
-    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173",
+    "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173,http://65.0.105.222:5173",
 )
 cors_origins = [x.strip() for x in cors_origins_raw.split(",") if x.strip()]
 app.add_middleware(

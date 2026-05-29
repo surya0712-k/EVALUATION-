@@ -106,9 +106,9 @@ export function DashboardLayout() {
             {hasToken ? (
               <Link to="/profile">Profile</Link>
             ) : null}
-            <a href={apiUrl("/status")} target="_blank" rel="noreferrer">
+            {/* <a href={apiUrl("/status")} target="_blank" rel="noreferrer">
               Status
-            </a>
+            </a> */}
             {hasToken ? (
               <button type="button" onClick={() => setLogoutOpen(true)}>
                 Log out

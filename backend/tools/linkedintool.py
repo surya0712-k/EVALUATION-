@@ -1,3 +1,8 @@
+"""
+Legacy stdio MCP entry (LinkedIn only).
+
+Prefer the unified HTTP server: python backend/tools/mcp_server.py  (port 8001)
+"""
 from __future__ import annotations
 
 import asyncio
@@ -8,8 +13,7 @@ from typing import Any
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
-_BACKEND = Path(__file__).resolve().parents[1]
-if str(_BACKEND) not in sys.path:
+_BACKEND = Path(__file__).resolve().parents[1]if str(_BACKEND) not in sys.path:
     sys.path.insert(0, str(_BACKEND))
 
 load_dotenv(_BACKEND / ".env")

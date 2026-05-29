@@ -1,3 +1,8 @@
+"""
+Legacy stdio MCP entry (GitHub only).
+
+Prefer the unified HTTP server: python backend/tools/mcp_server.py  (port 8001)
+"""
 from __future__ import annotations
 
 import asyncio
@@ -16,8 +21,7 @@ load_dotenv(_BACKEND / ".env")
 
 from app.analyzers.github import analyze_github_profile as _analyze_github_profile
 
-mcp = FastMCP("Careerlens GitHub Tool")
-
+mcp = FastMCP("Careerlens GitHub Tool (stdio)") 
 
 @mcp.tool()
 async def analyze_github_profile(github_url: str) -> dict[str, Any]:

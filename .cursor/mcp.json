@@ -1,14 +1,7 @@
 {
   "mcpServers": {
-    "careerlens-github": {
-      "command": "python",
-      "args": ["backend/tools/githubtool.py"],
-      "cwd": "${workspaceFolder}"
-    },
-    "careerlens-linkedin": {
-      "command": "python",
-      "args": ["backend/tools/linkedintool.py"],
-      "cwd": "${workspaceFolder}"
+    "careerlens": {
+      "url": "http://127.0.0.1:8090/mcp"
     }
   }
 }
