@@ -66,8 +66,8 @@ jobs:
           script: |
             set -e
             cd ${{ env.EC2_DEPLOY_PATH }}
-            docker compose pull backend frontend mcp
-            docker compose up -d --remove-orphans
-            docker compose ps
+            docker-compose pull backend frontend mcp
+            docker-compose up -d --remove-orphans
+            docker-compose ps
             curl -sf http://127.0.0.1:8000/status > /dev/null && echo "Backend OK"
             curl -sf http://127.0.0.1:8090/health > /dev/null && echo "MCP OK" || echo "MCP health skipped (service may be absent)"
