@@ -375,7 +375,36 @@ services:
     volumes: [postgres_data:/var/lib/postgresql/data]
 ```
 
-### Publish updated backend image (includes MCP)
+### CI/CD (GitHub Actions)
+
+Every push to **`main`** runs [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml):
+
+1. Build and push `suryakanneti/evaluation-backend` and `suryakanneti/evaluation-frontend` to Docker Hub (`:latest` and `:sha-<commit>`).
+2. SSH into EC2, `cd ~/app`, `docker compose pull` for `backend`, `frontend`, and `mcp`, then `docker compose up -d`.
+
+CI does **not** change `~/app/docker-compose.yml` or `~/app/.env` on the instance.
+
+#### GitHub repository secrets
+
+Configure under **Settings → Secrets and variables → Actions**:
+
+| Secret | Description |
+|--------|-------------|
+| `DOCKERHUB_USERNAME` | Docker Hub username (e.g. `suryakanneti`) |
+| `DOCKERHUB_TOKEN` | Docker Hub access token (Account → Security) |
+| `EC2_HOST` | EC2 public IP or Elastic IP |
+| `EC2_USER` | SSH user (e.g. `ec2-user`) |
+| `EC2_SSH_PRIVATE_KEY` | Full `.pem` private key contents |
+
+#### EC2 prerequisites for CI
+
+- `~/app/docker-compose.yml` references `suryakanneti/evaluation-backend:latest` and `evaluation-frontend:latest` (and `mcp` if used).
+- `~/app/.env` exists with production secrets (never committed to Git).
+- Security group allows SSH (port 22) from GitHub Actions runners, **or** use a self-hosted runner on EC2 if inbound SSH from GitHub IPs is not possible.
+- If Docker Hub images are **private**, run `docker login` once on the EC2 instance.
+- Prefer an **Elastic IP** so `EC2_HOST` does not change after instance stop/start.
+
+#### Manual deploy (alternative)
 
 ```powershell
 cd backend
@@ -383,14 +412,16 @@ docker build -t suryakanneti/evaluation-backend:latest .
 docker push suryakanneti/evaluation-backend:latest
 ```
 
-On EC2:
-
 ```bash
 cd ~/app
-docker compose pull
+docker compose pull backend frontend mcp
 docker compose up -d
 curl -s http://127.0.0.1:8090/health
 ```
+
+#### Rollback
+
+Pin `~/app/docker-compose.yml` to `evaluation-backend:sha-<old-commit>` (or retag on Hub), then `docker compose pull && docker compose up -d backend mcp`.
 
 ### EC2 checklist
 
