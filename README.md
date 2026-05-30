@@ -380,7 +380,7 @@ services:
 Every push to **`main`** runs [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml):
 
 1. Build and push `suryakanneti/evaluation-backend` and `suryakanneti/evaluation-frontend` to Docker Hub (`:latest` and `:sha-<commit>`).
-2. SSH into EC2, `cd ~/app`, `docker compose pull` for `backend`, `frontend`, and `mcp`, then `docker compose up -d`.
+2. SSH into EC2, `cd ~/app`, `docker-compose pull` for `backend`, `frontend`, and `mcp`, then `docker-compose up -d` (EC2 uses the `docker-compose` v1 command).
 
 CI does **not** change `~/app/docker-compose.yml` or `~/app/.env` on the instance.
 
@@ -414,14 +414,14 @@ docker push suryakanneti/evaluation-backend:latest
 
 ```bash
 cd ~/app
-docker compose pull backend frontend mcp
-docker compose up -d
+docker-compose pull backend frontend mcp
+docker-compose up -d
 curl -s http://127.0.0.1:8090/health
 ```
 
 #### Rollback
 
-Pin `~/app/docker-compose.yml` to `evaluation-backend:sha-<old-commit>` (or retag on Hub), then `docker compose pull && docker compose up -d backend mcp`.
+Pin `~/app/docker-compose.yml` to `evaluation-backend:sha-<old-commit>` (or retag on Hub), then `docker-compose pull && docker-compose up -d backend mcp`.
 
 ### EC2 checklist
 
@@ -431,7 +431,7 @@ Pin `~/app/docker-compose.yml` to `evaluation-backend:sha-<old-commit>` (or reta
 | Elastic IP | Stops public IP from changing on instance stop/start |
 | `.env` on server | Same secrets as local `backend/.env` |
 | Google OAuth | Hostname with TLD in JavaScript origins + matching `CORS_ORIGINS` |
-| After reboot | `cd ~/app && docker compose up -d` |
+| After reboot | `cd ~/app && docker-compose up -d` |
 
 ### What to share
 
@@ -508,8 +508,8 @@ SELECT id, email, name FROM users LIMIT 10;
 | CORS errors | `CORS_ORIGINS` missing exact browser origin |
 | LinkedIn placeholder on EC2 | `APIFY_API_TOKEN` missing in container `env_file` |
 | MCP browser shows `text/event-stream` error | Normal — use `/health` in browser, `/mcp` in Cursor only |
-| `docker compose` not found | Run from directory containing `docker-compose.yml` (`~/app`) |
-| Old MCP code on EC2 | Rebuild and `docker push` backend image, then `docker compose pull` |
+| `docker compose` not found on EC2 | Use `docker-compose` (hyphen); CI deploy script uses that |
+| Old MCP code on EC2 | Rebuild and `docker push` backend image, then `docker-compose pull` |
 
 ---
 
